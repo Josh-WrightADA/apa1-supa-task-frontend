@@ -3,14 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <div id="navbar-container"></div>
+
+    </div>
     <title>Task 2 Starter Template</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <h1>Task 2 Starter Template</h1>
-    <button id="callFunction">Call Function</button>
-    <div id="result">Results will appear here...</div>
+   
+    <button id="callFunction">When did I last have caffeine?</button>
+    <div id="result">?? Days ?? hours ago</div>
 
     <script src="client.js"></script>
+    <script>
+ 
+      function loadNavbar() {
+          fetch('navbar.html')
+              .then(response => response.text())
+              .then(data => {
+                  document.getElementById('navbar-container').innerHTML = data;
+              })
+              .catch(error => console.error('Error loading navbar:', error));
+      }
+  
+  
+      window.onload = loadNavbar;
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   </body>
 </html>
