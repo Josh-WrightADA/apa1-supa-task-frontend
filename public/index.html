@@ -1,35 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <div id="navbar-container"></div>
-
-    </div>
-    <title>Task 2 Starter Template</title>
+    <title>Going Cold Coffee</title>
     <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-   
-    <button id="callFunction">When did I last have caffeine?</button>
-    <div id="result">?? Days ?? hours ago</div>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    
+    <div class="welcome-container" style="display: block;">
+        <div class="welcome-content">
+            <h1>Welcome to Going Cold Coffee</h1>
+            <p>Track your coffee journey and discover your perfect brew</p>
+        </div>
+    </div>
 
+    <div class="landing-container">
+        <div class="landing-header">
+            <h1>Your Caffeine Wellness Tracker</h1>
+            <p class="subtitle">Track your journey to a balanced relationship with caffeine</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <h3>Time Since Last Caffeine</h3>
+                <p>Monitor your streak and track withdrawal patterns</p>
+                <div id="coffeeTimer" class="metric-display"></div>
+            </div>
+
+            <div class="feature-card">
+                <h3>Wellness Check-in</h3>
+                <p>Rate your alertness, mood, and cravings throughout your journey</p>
+                <button class="check-in-btn">Log Status</button>
+            </div>
+
+            <div class="feature-card">
+                <h3>Insights</h3>
+                <p>Visualize your patterns and discover your optimal caffeine balance</p>
+                <canvas id="statsChart"></canvas>
+            </div>
+        </div>
+    </div>    <div id="authModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Sign in</h2>
+            <form id="authForm">
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="registerModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-register">&times;</span>
+            <h2 id="modalTitle">Register</h2>
+            <form id="registerForm">
+                <input type="email" id="registerEmail" placeholder="Email" required>
+                <input type="password" id="registerPassword" placeholder="Password" required>
+                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                <button type="submit">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="client.js"></script>
-    <script>
- 
-      function loadNavbar() {
-          fetch('navbar.html')
-              .then(response => response.text())
-              .then(data => {
-                  document.getElementById('navbar-container').innerHTML = data;
-              })
-              .catch(error => console.error('Error loading navbar:', error));
-      }
-  
-  
-      window.onload = loadNavbar;
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  </body>
+</body>
 </html>
