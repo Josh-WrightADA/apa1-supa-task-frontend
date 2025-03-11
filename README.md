@@ -20,6 +20,9 @@ Going Cold Coffee is a web application designed to help users track their caffei
 - View history of caffeine consumption
 - Calculate and display time elapsed since last caffeine intake
 - Edit and delete past entries
+- **Search entries** by beverage type or caffeine amount
+- **Sort entries** by date, caffeine amount, or beverage type
+
 
 ### Wellness Check-ins
 - Record daily wellness metrics:

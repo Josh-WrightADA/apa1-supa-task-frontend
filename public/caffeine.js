@@ -359,98 +359,257 @@ const CaffeineTracker = {
             console.error("Error deleting caffeine entry:", err);
             showToast("Failed to delete entry: " + err.message, "error");
         }
-    }
+    },
+    // Add these functions inside the CaffeineTracker object
+sortEntries: function(entries, sortBy = 'date', ascending = false) {
+    if (!entries || entries.length === 0) return [];
+    
+    return [...entries].sort((a, b) => {
+        if (sortBy === 'amount') {
+            return ascending ? a.amount - b.amount : b.amount - a.amount;
+        } else if (sortBy === 'date') {
+            return ascending 
+                ? new Date(a.consumed_at) - new Date(b.consumed_at) 
+                : new Date(b.consumed_at) - new Date(a.consumed_at);
+        } else if (sortBy === 'type') {
+            const typeA = a.beverage_type.toLowerCase();
+            const typeB = b.beverage_type.toLowerCase();
+            return ascending 
+                ? typeA.localeCompare(typeB)
+                : typeB.localeCompare(typeA);
+        }
+        return 0;
+    });
+},
+
+searchEntries: function(entries, searchTerm) {
+    if (!searchTerm || !entries || entries.length === 0) return entries;
+    
+    const term = searchTerm.toLowerCase().trim();
+    return entries.filter(entry => 
+        (entry.beverage_type && entry.beverage_type.toLowerCase().includes(term)) ||
+        (entry.amount && entry.amount.toString().includes(term))
+    );
+}
+
+    
 };
 
 // Loading caffeine entries from database
 async function loadCaffeineEntries() {
     try {
-        console.log("Loading caffeine entries...");
-        const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log("Loading caffeine entries...")
+        const { data: { user } } = await supabaseClient.auth.getUser()
         
         if (!user) {
-            console.log("No authenticated user");
-            return [];
+            console.log("No authenticated user")
+            return
         }
         
         const { data, error } = await supabaseClient
             .from('caffeine_entries')
             .select('*')
             .eq('user_id', user.id)
-            .order('consumed_at', { ascending: false });
+            .order('consumed_at', { ascending: false })
             
-        if (error) throw error;
+        if (error) throw error
         
-        console.log("Retrieved caffeine entries:", data);
-        return data;
+        console.log("Retrieved caffeine entries:", data)
+        
+        // Store entries globally for sorting/searching
+        window.allCaffeineEntries = data || [];
+        
+        return data
         
     } catch (err) {
-        console.error("Error loading caffeine entries:", err);
-        showToast("Error loading caffeine data", "error");
-        return [];
+        console.error("Error loading caffeine entries:", err)
     }
 }
 
 // Display caffeine entries in the UI
+// Find the displayCaffeineEntries function and modify it
 function displayCaffeineEntries(entries) {
-    console.log("Displaying caffeine entries:", entries);
+    const container = document.getElementById('caffeineEntries') || 
+                     document.querySelector('.feature-card:first-child');
     
-    const container = document.querySelector('.feature-card:first-child');
     if (!container) {
-        console.error("Could not find container to display caffeine entries");
-        return;
+      console.error("Could not find container to display caffeine entries");
+      return;
     }
     
     // Button to add new caffeine entry
     const addButton = `
-        <button id="addCaffeineBtn" class="journal-btn">Log Caffeine</button>
+      <button id="addCaffeineBtn" class="journal-btn">Log Caffeine</button>
+    `;
+    
+    // Add search and sort controls
+    const controlsHtml = `
+      <div class="entry-controls">
+        <div class="search-box">
+          <input type="text" id="caffeineSearch" placeholder="Search entries..." class="search-input">
+        </div>
+        <div class="sort-controls">
+          <label for="sortCriteria">Sort by:</label>
+          <select id="sortCriteria" class="sort-select">
+            <option value="date">Date</option>
+            <option value="amount">Caffeine Amount</option>
+            <option value="type">Beverage Type</option>
+          </select>
+          <button id="sortDirection" class="sort-direction" data-ascending="false">↓</button>
+        </div>
+      </div>
     `;
     
     if (!entries || entries.length === 0) {
-        container.innerHTML = `
-            <h3>Caffeine Tracker</h3>
-            <div class="timer-display">
-                <p>No caffeine consumed yet. Good job! ☕</p>
-            </div>
-            <div class="card-actions">
-                ${addButton}
-            </div>`;
+      container.innerHTML = `
+        <div class="timer-display">
+          <h3>Caffeine Tracker</h3>
+          <p>No caffeine consumed yet. Good job! ☕</p>
+          ${controlsHtml}
+          ${addButton}
+        </div>`;
     } else {
-        // Sort entries by consumed_at date (newest first)
-        entries.sort((a, b) => new Date(b.consumed_at) - new Date(a.consumed_at));
-        
-        // Get the most recent entry
-        const lastEntry = entries[0];
-        const lastConsumedDate = new Date(lastEntry.consumed_at);
-        
-        // Calculate time since last caffeine
-        const timeSince = getTimeSince(lastConsumedDate);
-        
-        // Create the HTML for the timer display
-        container.innerHTML = `
-            <h3>Time Since Last Caffeine</h3>
-            <div class="card-content">
-                <div id="caffeineTimer" class="metric-display">
-                    <span class="time-counter">${timeSince}</span>
+      // Sort entries by consumed_at date (newest first)
+      entries.sort((a, b) => new Date(b.consumed_at) - new Date(a.consumed_at));
+      
+      // Get the most recent entry
+      const lastEntry = entries[0];
+      const lastConsumedDate = new Date(lastEntry.consumed_at);
+      
+      // Calculate time since last caffeine
+      const timeSince = getTimeSince(lastConsumedDate);
+      
+      // Create entries HTML
+      let entriesHtml = '';
+      if (entries.length > 1) {
+        entriesHtml = `
+          <div class="caffeine-entries-list">
+            <h4>Recent Entries</h4>
+            <div class="entries-container">
+              ${entries.slice(1, 5).map(entry => `
+                <div class="entry-item" data-id="${entry.id}">
+                  <div class="entry-type">${entry.beverage_type}</div>
+                  <div class="entry-amount">${entry.amount}mg</div>
+                  <div class="entry-date">${new Date(entry.consumed_at).toLocaleString()}</div>
+                  <button class="edit-entry-btn" onclick="CaffeineTracker.editEntry('${entry.id}')">Edit</button>
                 </div>
-                <div class="last-entry">
-                    <div class="entry-header">
-                        <h4>Last Consumption</h4>
-                        <button class="caffeine-edit-btn" data-id="${lastEntry.id}">Edit</button>
-                    </div>
-                    <p>${lastEntry.beverage_type} (${lastEntry.amount}mg)</p>
-                    <small>Consumed on ${lastConsumedDate.toLocaleDateString()} at ${lastConsumedDate.toLocaleTimeString()}</small>
-                </div>
+              `).join('')}
             </div>
-            <div class="card-actions">
-                ${addButton}
-            </div>
+          </div>
         `;
-        
-        // Set up interval to update the timer
-        updateCaffeineTimer(lastConsumedDate);
+      }
+      
+      // Create the HTML for the timer display
+      container.innerHTML = `
+        <h3>Time Since Last Caffeine</h3>
+        <div class="card-content">
+          <div id="caffeineTimer" class="metric-display">
+            <span class="time-counter">${timeSince}</span>
+          </div>
+          <div class="last-entry">
+            <div class="entry-header">
+              <h4>Last Consumption</h4>
+              <button onclick="CaffeineTracker.editEntry('${lastEntry.id}')" class="edit-btn">Edit</button>
+            </div>
+            <p>${lastEntry.beverage_type} (${lastEntry.amount}mg)</p>
+            <small>Consumed on ${lastConsumedDate.toLocaleDateString()} at ${lastConsumedDate.toLocaleTimeString()}</small>
+          </div>
+          ${controlsHtml}
+          ${entriesHtml}
+        </div>
+        <div class="card-actions">
+          ${addButton}
+        </div>
+      `;
+      
+      // Set up interval to update the timer
+      updateCaffeineTimer(lastConsumedDate);
     }
-}
+    
+    // Add event listener to the add button
+    const addCaffeineBtn = document.getElementById('addCaffeineBtn');
+    if (addCaffeineBtn) {
+      addCaffeineBtn.addEventListener('click', showCaffeineForm);
+    }
+    
+    // Add event listeners for search and sort
+    const searchInput = document.getElementById('caffeineSearch');
+    const sortCriteria = document.getElementById('sortCriteria');
+    const sortDirection = document.getElementById('sortDirection');
+    
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        // Store current entries in a global variable if not already done
+        if (!window.allCaffeineEntries) {
+          window.allCaffeineEntries = entries;
+        }
+        
+        // Apply search filter
+        const filtered = CaffeineTracker.searchEntries(window.allCaffeineEntries, this.value);
+        
+        // Apply current sort
+        const sortBy = sortCriteria ? sortCriteria.value : 'date';
+        const ascending = sortDirection ? sortDirection.dataset.ascending === 'true' : false;
+        const sorted = CaffeineTracker.sortEntries(filtered, sortBy, ascending);
+        
+        // Redisplay with search and sort applied
+        displayCaffeineEntries(sorted);
+        
+        // Re-select the search field and restore its value
+        const newSearchInput = document.getElementById('caffeineSearch');
+        if (newSearchInput) {
+          newSearchInput.value = this.value;
+          newSearchInput.focus();
+        }
+      });
+    }
+    
+    if (sortCriteria && sortDirection) {
+      // Function to handle sort changes
+      const handleSortChange = function() {
+        // Store current entries if not already done
+        if (!window.allCaffeineEntries) {
+          window.allCaffeineEntries = entries;
+        }
+        
+        // Get current search term
+        const searchTerm = searchInput ? searchInput.value : '';
+        
+        // Apply search filter
+        const filtered = CaffeineTracker.searchEntries(window.allCaffeineEntries, searchTerm);
+        
+        // Apply sort
+        const sortBy = sortCriteria.value;
+        const ascending = sortDirection.dataset.ascending === 'true';
+        const sorted = CaffeineTracker.sortEntries(filtered, sortBy, ascending);
+        
+        // Redisplay with sort applied
+        displayCaffeineEntries(sorted);
+        
+        // Restore search and sort UI state
+        const newSearchInput = document.getElementById('caffeineSearch');
+        const newSortCriteria = document.getElementById('sortCriteria');
+        const newSortDirection = document.getElementById('sortDirection');
+        
+        if (newSearchInput) newSearchInput.value = searchTerm;
+        if (newSortCriteria) newSortCriteria.value = sortBy;
+        if (newSortDirection) {
+          newSortDirection.dataset.ascending = ascending;
+          newSortDirection.textContent = ascending ? '↑' : '↓';
+        }
+      };
+      
+      sortCriteria.addEventListener('change', handleSortChange);
+      
+      sortDirection.addEventListener('click', function() {
+        const ascending = this.dataset.ascending === 'true';
+        this.dataset.ascending = (!ascending).toString();
+        this.textContent = !ascending ? '↑' : '↓';
+        handleSortChange();
+      });
+    }
+  }
+  
 
 // Function to calculate time since last caffeine
 function getTimeSince(date) {
@@ -493,6 +652,8 @@ function updateCaffeineTimer(lastConsumedDate) {
         }
     }, 60000); // Update every minute
 }
+
+
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', function() {

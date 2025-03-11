@@ -29,29 +29,29 @@ The application was tested using a combination of:
 | CAFF-01 | Add Caffeine Entry | 1. Click "Log Caffeine" button<br>2. Select beverage type<br>3. Enter amount<br>4. Select time<br>5. Click "Save" | Entry is saved and appears in timer display | ✅ Pass | [Screenshot](screenshots/caffeineEntry.png) |
 | CAFF-02 | Edit Caffeine Entry | 1. Locate existing entry<br>2. Click edit button<br>3. Modify details<br>4. Click "Update" | Entry is updated with new information | ✅ Pass | [Screenshot](screenshots/editEntry.png) |
 | CAFF-03 | Delete Caffeine Entry | 1. Locate existing entry<br>2. Click edit button<br>3. Click "Delete Entry"<br>4. Confirm deletion | Entry is removed from the list | ✅ Pass | [Screenshot](screenshots/deleteEntry.png) |
-| CAFF-04 | Future Date Validation | 1. Click "Log Caffeine"<br>2. Enter valid details<br>3. Set future date/time<br>4. Click "Save" | Error message about future dates not allowed | ✅ Pass | [Screenshot] |
+| CAFF-04 | Future Date Validation | 1. Click "Log Caffeine"<br>2. Enter valid details<br>3. Set future date/time<br>4. Click "Save" | Error message about future dates not allowed | ✅ Pass | [Screenshot](screenshots/futureValidation.png) |
 
 ### Wellness Check-ins
 
 | Test ID | Description | Steps | Expected Result | Status | Screenshot |
 |---------|-------------|-------|----------------|--------|------------|
-| WELL-01 | Add Wellness Check-in | 1. Click "Log Status" button<br>2. Set energy level<br>3. Set mood level<br>4. Set craving level<br>5. Add notes<br>6. Click "Save" | Check-in is saved and chart updates | ✅ Pass | [Screenshot] |
-| WELL-02 | View Wellness Trends | 1. Log multiple wellness check-ins<br>2. View the Insights card | Chart displays with correct data points | ✅ Pass | [Screenshot] |
+| WELL-01 | Add Wellness Check-in | 1. Click "Log Status" button<br>2. Set energy level<br>3. Set mood level<br>4. Set craving level<br>5. Add notes<br>6. Click "Save" | Check-in is saved and chart updates | ✅ Pass | [Screenshot](screenshots/wellnessEntry.png) |
+| WELL-02 | View Wellness Trends | 1. Log multiple wellness check-ins<br>2. View the Insights card | Chart displays with correct data points | ✅ Pass | [Screenshot](screenshots/insights.png) |
 
 ### Form Validation
 
 | Test ID | Description | Steps | Expected Result | Status | Screenshot |
 |---------|-------------|-------|----------------|--------|------------|
-| FORM-01 | Empty Form Submission | 1. Open any form<br>2. Leave fields empty<br>3. Submit form | Form shows validation errors | ✅ Pass | [Screenshot] |
-| FORM-02 | Invalid Email Format | 1. Open login form<br>2. Enter invalid email format<br>3. Submit | Validation error for email format | ✅ Pass | [Screenshot] |
-| FORM-03 | Caffeine Amount Bounds | 1. Open caffeine form<br>2. Enter negative amount<br>3. Submit | Validation error for invalid amount | ✅ Pass | [Screenshot] |
+| FORM-01 | Empty Form Submission | 1. Open any form<br>2. Leave fields empty<br>3. Submit form | Form shows validation errors | ✅ Pass | [Screenshot](screenshots/emptyForm.png) |
+| FORM-02 | Invalid Email Format | 1. Open login form<br>2. Enter invalid email format<br>3. Submit | Validation error for email format | ✅ Pass | [Screenshot](screenshots/invalidEmail.png) |
+| FORM-03 | Caffeine Amount Bounds | 1. Open caffeine form<br>2. Enter negative amount<br>3. Submit | Validation error for invalid amount | ✅ Pass | [Screenshot](screenshots/invalidAmount.png) |
 
 ### Error Handling
 
 | Test ID | Description | Steps | Expected Result | Status | Screenshot |
 |---------|-------------|-------|----------------|--------|------------|
-| ERR-01 | Network Error Handling | 1. Disable internet connection<br>2. Attempt to save entry | Appropriate error message shown | ✅ Pass | [Screenshot] |
-| ERR-02 | Authentication Error | 1. Enter incorrect login credentials<br>2. Submit login form | Appropriate error message shown | ✅ Pass | [Screenshot] |
+
+| ERR-01 | Authentication Error | 1. Enter incorrect login credentials<br>2. Submit login form | Appropriate error message shown | ✅ Pass | [Screenshot](screenshots/incorrectLogin.png) |
 
 ## Cross-Browser Testing
 
@@ -60,8 +60,6 @@ The application was tested using a combination of:
 | Chrome | 91+ | ✅ Full | All features work as expected |
 | Firefox | 89+ | ✅ Full | All features work as expected |
 | Safari | 14+ | ✅ Full | Minor styling differences but functionality intact |
-| Edge | 91+ | ✅ Full | All features work as expected |
-| Mobile Chrome | Latest | ✅ Full | Responsive design works well |
 
 ## Edge Cases Tested
 
@@ -77,9 +75,4 @@ The application was tested using a combination of:
 2. Chart visualization has limited customization options
 3. No export functionality for historical data
 
-## Future Testing Improvements
 
-1. Implement automated unit tests for core functions
-2. Add integration tests for critical workflows
-3. Implement continuous integration testing pipeline
-4. Add performance benchmarking
