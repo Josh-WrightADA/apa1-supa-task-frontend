@@ -1,0 +1,102 @@
+/* Base form styles */
+form {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Form group container */
+.form-group {
+  width: 100%;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+/* Form controls */
+input, select, textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid var(--primary-dark, #4a2c2a);
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: #fff;
+}
+
+/* Auth forms */
+#authForm, #registerForm, #caffeineForm, #wellnessForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+/* Form button styling */
+#authForm button, #registerForm button {
+  background-color: var(--primary-dark, #4a2c2a);
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+#authForm button:hover, #registerForm button:hover {
+  background-color: #2c1810;
+}
+
+/* Range slider styling */
+input[type="range"].slider {
+  width: 100%;
+  margin: 10px 0;
+  -webkit-appearance: none;
+  background: var(--secondary-dark, #d4b28c);
+  height: 8px;
+  border-radius: 4px;
+}
+
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary, #6d4c41);
+  cursor: pointer;
+}
+
+.range-value {
+  font-weight: bold;
+  text-align: center;
+  margin-top: 5px;
+}
+
+/* Textarea styling */
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--primary-dark, #4a2c2a);
+  border-radius: 4px;
+  resize: vertical;
+  max-height: 150px;
+  font-family: inherit;
+}
+
+/* Form button containers */
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.form-buttons button {
+  flex: 0 1 auto;
+  white-space: nowrap;
+  min-width: 100px;
+}

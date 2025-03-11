@@ -1,0 +1,47 @@
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  /* Main chart canvas */
+  #statsChart {
+    width: 100%;
+    height: 200px;
+    margin-top: 15px;
+    display: block;
+    max-height: 250px !important;
+  }
+  
+  /* Feature card specific canvas constraints */
+  .feature-card canvas {
+    max-height: 300px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Data display elements */
+  .metric-display {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 15px 0;
+    color: var(--primary-dark, #4b2e1a);
+  }
+  
+  .time-counter {
+    display: block;
+    padding: 10px;
+    background: rgba(var(--secondary-rgb, 245, 225, 197), 0.7);
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  /* Data visualization elements */
+  .rating-display {
+    color: var(--primary, #6d4c41);
+    font-size: 1.2rem;
+    margin: 10px 0;
+  }
+  

@@ -1,3 +1,26 @@
+function cleanupCharts() {
+    // Clean up any existing charts to prevent conflicts
+    const canvases = ['statsChart', 'wellnessChart'];
+    
+    canvases.forEach(canvasId => {
+        const canvas = document.getElementById(canvasId);
+        if (canvas) {
+            try {
+                // Check if Chart is defined and has the getChart method
+                if (typeof Chart !== 'undefined' && Chart.getChart) {
+                    const chart = Chart.getChart(canvas);
+                    if (chart) {
+                        console.log(`Destroying chart on ${canvasId}`);
+                        chart.destroy();
+                    }
+                }
+            } catch (e) {
+                console.error(`Error cleaning up chart on ${canvasId}:`, e);
+            }
+        }
+    });
+}
+
 const { createClient } = supabase;
 
 const supabaseClient = createClient(
@@ -115,27 +138,61 @@ function loadNavbar() {
 document.addEventListener('DOMContentLoaded', () => {
     loadNavbar().then(() => {
         setupModalListeners();
-        initializeCharts();
+        cleanupCharts();
+        
+        // Stagger initializations with timeouts
+        setTimeout(() => {
+            if (typeof initializeCharts === 'function') {
+                initializeCharts();
+            }
+            
+            // Initialize components only after authentication check
+            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    // Sequential initialization with delays
+                    setTimeout(() => {
+                        if (typeof initializeCaffeineTracking === 'function') {
+                            initializeCaffeineTracking();
+                        }
+                        
+                        setTimeout(() => {
+                            if (typeof initializeWellnessTracking === 'function') {
+                                initializeWellnessTracking();
+                            }
+                        }, 150);
+                    }, 150);
+                }
+            });
+        }, 100);
     });
-});
-
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    const signInBtn = document.querySelector('.signInBtn');
-    const registerBtn = document.querySelector('.registerBtn');
-    const landingContainer = document.querySelector('.landing-container');
-    const welcomeContainer = document.querySelector('.welcome-container');
-    
-    if (session) {
-        signInBtn.textContent = 'Sign Out';
-        registerBtn.style.display = 'none';
-        welcomeContainer.style.display = 'none';
-        landingContainer.style.display = 'block';
-    } else {
-        signInBtn.textContent = 'Sign In';
-        registerBtn.style.display = 'block';
-        landingContainer.style.display = 'none';
-        welcomeContainer.style.display = 'block';
-    }
+});supabaseClient.auth.onAuthStateChange((event, session) => {
+    // Delay the DOM updates to ensure elements are loaded
+    setTimeout(() => {
+        const signInBtn = document.querySelector('.signInBtn');
+        const registerBtn = document.querySelector('.registerBtn');
+        const landingContainer = document.querySelector('.landing-container');
+        const welcomeContainer = document.querySelector('.welcome-container');
+        
+        if (session) {
+            if (signInBtn) signInBtn.textContent = 'Sign Out';
+            if (registerBtn) registerBtn.style.display = 'none';
+            if (welcomeContainer) welcomeContainer.style.display = 'none';
+            if (landingContainer) landingContainer.style.display = 'block';
+            
+            // Initialize caffeine and wellness tracking when user logs in
+            if (typeof initializeCaffeineTracking === 'function') {
+                initializeCaffeineTracking();
+            }
+            if (typeof initializeWellnessTracking === 'function') {
+                initializeWellnessTracking();
+            }
+        } else {
+            if (signInBtn) signInBtn.textContent = 'Sign In';
+            if (registerBtn) registerBtn.style.display = 'block';
+            if (landingContainer) landingContainer.style.display = 'none';
+            if (welcomeContainer) welcomeContainer.style.display = 'block';
+        }
+    }, 100); // Small delay to ensure DOM is ready
 });
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');

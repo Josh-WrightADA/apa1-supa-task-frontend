@@ -1,0 +1,80 @@
+/* CSS Reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+  }
+  
+  input, button, textarea, select {
+    font: inherit;
+  }
+  
+  p, h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+  }
+  
+  /* CSS Variables */
+  :root {
+    --primary-dark: #4b2e1a;
+    --primary: #6d4c41;
+    --primary-light: #8b5e3c;
+    --secondary: #f5e1c5;
+    --secondary-dark: #d4b28c;
+    --text-light: #f5e1c5;
+    --text-dark: #3d2b1f;
+    --shadow: rgba(0, 0, 0, 0.2);
+    
+    /* Add RGB versions for opacity control */
+    --primary-rgb: 109, 76, 65;
+    --primary-dark-rgb: 75, 46, 26;
+    --secondary-rgb: 245, 225, 197;
+  }
+  
+  /* Base body styles */
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to bottom, var(--primary), var(--primary-light));
+    color: var(--text-dark);
+    min-height: 100vh;
+    background-attachment: fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Apply transitions only to interactive elements for better performance */
+  a, button, input, select, textarea, .feature-card, .modal-content, .toast-notification {
+    transition: all 0.3s ease;
+  }
+  
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0.5em;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  
+  a {
+    color: var(--primary-dark);
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  

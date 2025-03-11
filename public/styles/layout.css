@@ -1,0 +1,95 @@
+/* Container base class */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* Welcome container */
+.welcome-container, .landing-container {
+  position: relative;
+  z-index: 1;
+  min-height: 80vh;
+  max-width: 1200px;
+  margin: 50px auto;
+  padding: 40px 20px;
+}
+
+/* Landing page header */
+.landing-header {
+  text-align: center;
+  margin-bottom: 50px;
+  color: var(--text-light, #f5e1c5);
+}
+
+.landing-header h1 {
+  font-size: 2.8rem;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.landing-header .subtitle {
+  font-size: 1.2rem;
+  color: var(--secondary-dark, #d4b28c);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Welcome content */
+.welcome-content {
+  text-align: center;
+  color: var(--text-light, #f5e1c5);
+}
+
+.welcome-content h1 {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.welcome-content p {
+  font-size: 1.5rem;
+  margin-bottom: 40px;
+}
+
+/* Feature grid */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+/* Welcome buttons container */
+.welcome-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Stats container */
+.stats-container {
+  margin-top: 50px;
+  padding: 20px;
+  background: rgba(245, 225, 197, 0.1);
+  border-radius: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .features {
+    grid-template-columns: 1fr;
+  }
+  
+  .welcome-content h1 {
+    font-size: 2.5rem;
+  }
+  
+  .landing-header h1 {
+    font-size: 2.2rem;
+  }
+}

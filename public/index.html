@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Going Cold Coffee</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles/main.css" />
+
 </head>
 <body>
     <div id="navbar-container"></div>
@@ -27,6 +28,7 @@
                 <h3>Time Since Last Caffeine</h3>
                 <p>Monitor your streak and track withdrawal patterns</p>
                 <div id="coffeeTimer" class="metric-display"></div>
+                <button id="addCaffeineBtn" class="journal-btn">Log Caffeine</button>
             </div>
 
             <div class="feature-card">
@@ -38,9 +40,13 @@
             <div class="feature-card">
                 <h3>Insights</h3>
                 <p>Visualize your patterns and discover your optimal caffeine balance</p>
-                <canvas id="statsChart"></canvas>
-            </div>
-        </div>
+                
+                <!-- Create separate canvases for different chart types -->
+                <div id="charts-container">
+                    <canvas id="wellnessChart" style="display:none;"></canvas>
+                    <canvas id="statsChart"></canvas>
+                </div>
+            </div>        </div>
     </div>    <div id="authModal" class="modal" style="display: none;">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -65,9 +71,45 @@
             </form>
         </div>
     </div>
+<!-- Caffeine Form Modal -->
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="client.js"></script>
+<div id="caffeineFormContainer" class="modal-container" style="display: none;">
+    <div class="modal-content">
+        <h2>Log Caffeine Intake</h2>
+        <form id="caffeineForm">
+            <div class="form-group">
+                <label for="caffeineAmount">Caffeine Amount (mg)</label>
+                <input type="number" id="caffeineAmount" required>
+            </div>
+            <div class="form-group">
+                <label for="beverageType">Beverage Type</label>
+                <select id="beverageType" required>
+                    <option value="coffee">Coffee</option>
+                    <option value="tea">Tea</option>
+                    <option value="energy drink">Energy Drink</option>
+                    <option value="soda">Soda</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="consumedAt">When Consumed</label>
+                <input type="datetime-local" id="consumedAt" required>
+            </div>
+            <div class="form-buttons">
+                <button type="submit">Save</button>
+                <button type="button" class="cancel-btn">Cancel</button>
+            </div>        </form>    </div>
+</div>
+
+
+<!-- Add this near the end of the body tag -->
+<div id="wellnessFormContainer" class="modal" style="display: none;">
+    <!-- Will be populated by JavaScript -->
+</div><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="chart.js"></script>
+<script src="client.js"></script>
+<script src="caffeine.js"></script>
+<script src="wellness.js"></script>
 </body>
 </html>
