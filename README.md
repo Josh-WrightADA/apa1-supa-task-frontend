@@ -7,6 +7,12 @@ Going Cold Coffee is a web application designed to help users track their caffei
 
 ## Features
 
+
+### Integration
+The frontend communicates with the backend through:
+1. Direct Supabase client connections (authentication, simple data operations)
+2. Express.js proxy server for Edge Function API calls
+
 ### User Authentication
 - Secure user registration and login using Supabase authentication
 - Email/password authentication
@@ -119,19 +125,136 @@ server.js               # Express server for static files and API proxying
 - Mobile application version
 - Account management
 
+
 ## Testing
 
-The application has been tested for:
-- User authentication flows
-- Data persistence and retrieval
-- Form validation
-- Responsive design across different devices
-- Error handling
+The application has been tested using multiple approaches:
+- Manual testing for user flows and UI interactions
+- Unit tests with Jest for core functionality
 
-[Link to testing documentation](TESTING.md)
+### Running Unit Tests
 
-## Demo Video
+1. Install test dependencies:
+   ```
+   npm install --save-dev jest jest-environment-jsdom
+   ```
 
-[Watch demonstration video](https://youtu.be/your_demo_video_link)
+2. Run all tests:
+   ```
+   npm test
+   ```
+
+3. Run specific test files:
+   ```
+   npx jest public/Testing/auth.test.js --config jest.config.js
+   npx jest public/Testing/caffeine.test.js --config jest.config.js
+   npx jest public/Testing/wellness.test.js --config jest.config.js
+   npx jest public/Testing/utils.test.js --config jest.config.js
+   ```
+
+### Unit Test Coverage
+
+The Jest tests cover key functionality of the application:
+
+1. **Authentication Module**:
+   - User registration functionality
+   - Login processes
+   - Error handling for authentication
+
+2. **Caffeine Tracking**:
+   - Time calculations for caffeine consumption
+   - Form submission for caffeine entries
+   - UI updates based on caffeine data
+
+3. **Wellness Tracking**:
+   - Wellness data visualization with Chart.js
+   - Form submission for wellness check-ins
+   - Data processing for wellness metrics
+
+4. **Utilities**:
+   - Toast notification system
+   - UI interaction effects
+
+Each test file validates the component's behavior in isolation, using mocks for external dependencies to ensure reliable testing.
+
+
+[Link to testing documentation](public/Testing/TESTING.md)
+```
+
+
+## Frontend Components
+
+### 1. Landing Page
+- Welcome message for unauthenticated users
+- Login and registration buttons
+- Brief explanation of the app's purpose
+
+### 2. Dashboard
+- Three main feature cards:
+  - Caffeine Timer (time since last consumption)
+  - Wellness Check-in (log wellness metrics)
+  - Insights (data visualization via Chart.js)
+
+### 3. Caffeine Tracking
+- Log new caffeine entries (beverage type, amount, time)
+- View time since last caffeine
+- Edit/delete existing entries
+
+### 4. Wellness Check-in
+- Record energy levels, mood, and caffeine cravings (scale 1-5)
+- Add optional notes
+- Edit/delete previous check-ins
+
+### 5. Data Visualization
+- Line chart showing trends over time
+- Three metrics tracked: energy level, mood, caffeine cravings
+- Data from the last 7 days visible on the chart
+
+## User Guide
+
+### Tracking Caffeine Consumption
+1. Click the "Log Caffeine" button
+2. Select beverage type (coffee, tea, etc.)
+3. Enter caffeine amount in mg
+4. Set the consumption time (defaults to current time)
+5. Click "Save"
+
+### Recording Wellness Check-ins
+1. Click the "Log Status" button
+2. Rate your energy level (1-5)
+3. Rate your mood (1-5)
+4. Rate your caffeine craving (1-5)
+5. Add optional notes
+6. Click "Save"
+
+### Viewing Insights
+- The insights chart automatically updates with new data
+- Shows data from the last 7 days
+- Visualizes the relationship between caffeine habits and wellness metrics
+
+## Development Information
+
+### Code Structure
+
+#### Frontend
+- `public/`
+  - `index.html` - Main app HTML
+  - `client.js` - Authentication and initialization
+  - `caffeine.js` - Caffeine tracking functionality
+  - `wellness.js` - Wellness check-in functionality
+  - `chart.js` - Data visualization
+  - `navbar.html` - Navigation component
+
+#### Backend
+- `supabase/functions/`
+  - `caffeineTimer/` - API for caffeine tracking
+  - `wellnessCheckin/` - API for wellness metrics
+  - `statsProcessor/` - Data processing for insights
+
+### Security Implementation
+- Row-Level Security (RLS) ensures users only access their own data
+- JWT authentication for API requests
+- Server-side validation for all data inputs
+
 
 ```

@@ -1,268 +1,154 @@
-// Unified initialization approach
 const CaffeineTracker = {
     currentEditId: null,
     entries: [],
     
     initialize: async function() {
         console.log("Initializing caffeine tracking...");
-        
-        // Bind methods to preserve "this" context
-        this.showAddForm = this.showAddForm.bind(this);
-        this.hideForm = this.hideForm.bind(this);
-        this.handleFormSubmit = this.handleFormSubmit.bind(this);
-        this.editEntry = this.editEntry.bind(this);
-        this.deleteEntry = this.deleteEntry.bind(this);
-        
-        // Set up event listeners for static elements
-        this.setupListeners();
-        
-        // Load and display entries
-        const entries = await loadCaffeineEntries();
-        if (entries) {
-            this.entries = entries;
-            displayCaffeineEntries(entries);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', async function() {
+                await loadNavbar();
+                
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    const signInBtn = document.querySelector('.signInBtn');
+                });
+                
+                setupModalListeners();
+                if (typeof initializeCharts === 'function') {
+                    initializeCharts();
+                }
+                
+                CaffeineTracker.setupListeners();
+                
+                // Load and display entries on startup
+                const entries = await loadCaffeineEntries();
+                displayCaffeineEntries(entries);
+                CaffeineTracker.displayCaffeineInsights(entries);
+            });
         } else {
-            // Still display UI even if no entries
-            displayCaffeineEntries([]);
+            await loadNavbar();
+            
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                const signInBtn = document.querySelector('.signInBtn');
+            });
+            
+            setupModalListeners();
+            if (typeof initializeCharts === 'function') {
+                initializeCharts();
+            }
+            
+            CaffeineTracker.setupListeners();
+            
+            // Load and display entries on startup
+            const entries = await loadCaffeineEntries();
+            displayCaffeineEntries(entries);
+            CaffeineTracker.displayCaffeineInsights(entries);
         }
     },
     
     setupListeners: function() {
-        // Use event delegation for dynamically created buttons
-        document.addEventListener('click', (event) => {
-            // Handle add button clicks
-            if (event.target.id === 'addCaffeineBtn' ||
-                (event.target.classList.contains('journal-btn') &&
-                 event.target.textContent.includes('Log Caffeine'))) {
-                console.log("Caffeine button clicked via delegation");
-                this.showAddForm();
-            }
-            
-            // Handle edit button clicks - use a specific class for caffeine edit buttons
-            if (event.target.classList.contains('caffeine-edit-btn') && event.target.dataset.id) {
-                console.log("Caffeine edit button clicked with ID:", event.target.dataset.id);
-                this.editEntry(event.target.dataset.id);
-            }
-        });
+        const addBtn = document.getElementById('addCaffeineBtn') || 
+                      document.querySelector('.feature-card button') ||
+                      document.querySelector('button:contains("Log Caffeine")');
+        
+        if (addBtn) {
+            console.log("Found caffeine button:", addBtn);
+            addBtn.addEventListener('click', CaffeineTracker.showAddForm);
+        } else {
+            console.error("Could not find caffeine button. Adding retry logic...");
+            setTimeout(CaffeineTracker.setupListeners, 500);
+        }
     },
     
     showAddForm: function() {
-        console.log("Showing add caffeine form");
-        
-        // IMPORTANT: Remove any existing container to avoid style inheritance issues
-        const existingContainer = document.getElementById('caffeineFormContainer');
-        if (existingContainer) {
-            existingContainer.remove();
+        // Check if wellness form is currently being processed
+        if (document.getElementById('wellnessFormContainer').style.display === 'block') {
+            console.log("Wellness form is open, not opening caffeine form");
+            return;
         }
         
-        // Create a brand new container each time
-        const formContainer = document.createElement('div');
-        formContainer.id = 'caffeineFormContainer';
-        formContainer.className = 'modal';
-        
-        // Add to body BEFORE setting innerHTML
-        document.body.appendChild(formContainer);
-        
-        // Set innerHTML after appending to DOM
-        formContainer.innerHTML = `
-            <div class="modal-content">
-                <span class="close">×</span>
-                <h2>Log Caffeine Consumption</h2>
-                <form id="caffeineForm">
-                    <div class="form-group">
-                        <label for="beverageType">Beverage Type</label>
-                        <select id="beverageType" required>
-                            <option value="">Select a beverage</option>
-                            <option value="coffee">Coffee</option>
-                            <option value="espresso">Espresso</option>
-                            <option value="tea">Tea</option>
-                            <option value="energy_drink">Energy Drink</option>
-                            <option value="soda">Soda</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="caffeineAmount">Caffeine Amount (mg)</label>
-                        <input type="number" id="caffeineAmount" required min="1" max="1000">
-                    </div>
-                    <div class="form-group">
-                        <label for="consumedAt">When Consumed</label>
-                        <input type="datetime-local" id="consumedAt">
-                    </div>
-                    <div class="form-buttons">
-                        <button type="submit" class="submit-btn">Save</button>
-                        <button type="button" class="cancel-btn">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        `;
-        
-        // Set default date-time to now
-        const now = new Date();
-        const nowLocalISOString = new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        document.getElementById('consumedAt').value = nowLocalISOString;
-        
-        // IMPORTANT: Set display after everything else is ready
-        // This ensures all styles are properly computed
-        setTimeout(() => {
-            formContainer.style.display = 'block';
-        }, 0);
-        
-        // Add event listeners
-        const closeBtn = formContainer.querySelector('.close');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', this.hideForm);
-        }
-        
-        const form = document.getElementById('caffeineForm');
-        if (form) {
-            form.addEventListener('submit', this.handleFormSubmit);
-        }
-        
-        const cancelButton = formContainer.querySelector('.cancel-btn');
-        if (cancelButton) {
-            cancelButton.addEventListener('click', this.hideForm);
-        }
-    },
-    
-    hideForm: function() {
-        const formContainer = document.getElementById('caffeineFormContainer');
-        if (formContainer) {
-            // First hide it
-            formContainer.style.display = 'none';
+        const container = document.getElementById('caffeineFormContainer');
+        if (container) {
+            container.innerHTML = `
+                <div class="modal-content">
+                    <span class="close">×</span>
+                    <h2>Log Caffeine Consumption</h2>
+                    <form id="caffeineForm">
+                        <div class="form-group">
+                            <label for="beverageType">Beverage Type</label>
+                            <select id="beverageType" required>
+                                <option value="">Select a beverage</option>
+                                <option value="coffee">Coffee</option>
+                                <option value="espresso">Espresso</option>
+                                <option value="tea">Tea</option>
+                                <option value="energy_drink">Energy Drink</option>
+                                <option value="soda">Soda</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="caffeineAmount">Caffeine Amount (mg)</label>
+                            <input type="number" id="caffeineAmount" required min="1" max="1000">
+                        </div>
+                        <div class="form-group">
+                            <label for="consumedAt">When Consumed</label>
+                            <input type="datetime-local" id="consumedAt">
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="submit-btn">Save</button>
+                            <button type="button" class="cancel-btn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            `;
             
-            // Then completely remove it from DOM to avoid style issues
-            setTimeout(() => {
-                formContainer.remove();
-            }, 100);
-        }
-    },
-    handleFormSubmit: async function(event) {
-        event.preventDefault();
-        
-        // Get form values
-        const amount = parseInt(document.getElementById('caffeineAmount').value);
-        const type = document.getElementById('beverageType').value;
-        const consumedAt = document.getElementById('consumedAt').value || new Date().toISOString();
-        
-        // VALIDATE DATE - Add this block
-        const selectedDate = new Date(consumedAt);
-        const currentDate = new Date();
-        
-        if (selectedDate > currentDate) {
-            showToast("You cannot log caffeine consumption for future dates!", "error");
-            return; // Stop form submission
-        }
-        
-        try {
-            // Get current user
-            const { data: { user } } = await supabaseClient.auth.getUser();
+            container.style.display = 'flex';
             
-            if (!user) {
-                showToast("Please sign in to save entries", "error");
-                return;
+            const now = new Date();
+            const nowLocalISOString = new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('consumedAt').value = nowLocalISOString;
+            
+            const closeBtn = container.querySelector('.close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', CaffeineTracker.hideForm);
             }
             
-            // Log data being sent
-            console.log("Saving entry:", {
-                user_id: user.id,
-                amount: amount,
-                beverage_type: type,
-                consumed_at: consumedAt
-            });
+            document.getElementById('caffeineForm').addEventListener('submit', CaffeineTracker.handleFormSubmit);
             
-            // For editing an existing entry or creating a new one
-            let data, error;
-            
-            if (this.currentEditId) {
-                // Update existing entry
-                console.log("Updating entry ID:", this.currentEditId);
-                
-                ({ data, error } = await supabaseClient
-                    .from('caffeine_entries')
-                    .update({
-                        amount: amount,
-                        beverage_type: type,
-                        consumed_at: consumedAt
-                    })
-                    .eq('id', this.currentEditId)
-                    .select());
-                    
-                if (error) throw error;
-                showToast("Entry updated successfully!", "success");
-            } else {
-                // Create new entry
-                ({ data, error } = await supabaseClient
-                    .from('caffeine_entries')
-                    .insert([
-                        { 
-                            user_id: user.id,
-                            amount: amount,
-                            beverage_type: type,
-                            consumed_at: consumedAt
-                        }
-                    ])
-                    .select());
-                    
-                if (error) throw error;
-                showToast("Caffeine entry saved!", "success");
+            const cancelButton = container.querySelector('.cancel-btn');
+            if (cancelButton) {
+                cancelButton.addEventListener('click', CaffeineTracker.hideForm);
             }
-            
-            // Reset edit ID
-            this.currentEditId = null;
-            
-            // Hide form
-            this.hideForm();
-            
-            // Reload data and display
-            const entries = await loadCaffeineEntries();
-            if (entries) {
-                this.entries = entries;
-                displayCaffeineEntries(entries);
-            }
-            
-        } catch (err) {
-            console.error("Error saving caffeine entry:", err);
-            showToast("Failed to save entry: " + err.message, "error");
         }
     },    
+    hideForm: function() {
+        const container = document.getElementById('caffeineFormContainer');
+        if (container) container.style.display = 'none';
+    },
+    
     editEntry: async function(entryId) {
+        // Set the current ID being edited
         this.currentEditId = entryId;
         
         try {
-            console.log("Fetching caffeine entry with ID:", entryId);
-            
-            // Get current user for security check
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            
-            if (!user) {
-                showToast("Please sign in to edit entries", "error");
-                return;
-            }
-            
+            // Get the entry data
             const { data, error } = await supabaseClient
-                .from('caffeine_entries')
+                .from('caffeine_entries') 
                 .select('*')
                 .eq('id', entryId)
-                .eq('user_id', user.id)  // Security check
                 .single();
                 
             if (error) throw error;
             
-            // Remove any existing container
-            const existingContainer = document.getElementById('caffeineFormContainer');
-            if (existingContainer) {
-                existingContainer.remove();
+            // Show form with pre-filled data
+            const container = document.getElementById('caffeineFormContainer');
+            
+            if (!container) {
+                console.error("Caffeine form container not found");
+                return;
             }
             
-            // Create a fresh container
-            const formContainer = document.createElement('div');
-            formContainer.id = 'caffeineFormContainer';
-            formContainer.className = 'modal';
-            document.body.appendChild(formContainer);
-            
-            // Populate with existing values
-            formContainer.innerHTML = `
+            // Populate form with existing values
+            container.innerHTML = `
                 <div class="modal-content">
                     <span class="close">×</span>
                     <h2>Edit Caffeine Entry</h2>
@@ -298,31 +184,15 @@ const CaffeineTracker = {
                 </div>
             `;
             
-            // Set display with a slight delay
-            setTimeout(() => {
-                formContainer.style.display = 'block';
-            }, 0);
+            // Show form
+            container.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
             
             // Add event listeners
-            const closeBtn = formContainer.querySelector('.close');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', this.hideForm);
-            }
-            
-            const form = document.getElementById('caffeineForm');
-            if (form) {
-                form.addEventListener('submit', this.handleFormSubmit);
-            }
-            
-            const cancelButton = formContainer.querySelector('.cancel-btn');
-            if (cancelButton) {
-                cancelButton.addEventListener('click', this.hideForm);
-            }
-            
-            const deleteButton = formContainer.querySelector('.delete-btn');
-            if (deleteButton) {
-                deleteButton.addEventListener('click', () => this.deleteEntry(entryId));
-            }
+            container.querySelector('.close').addEventListener('click', CaffeineTracker.hideForm);
+            container.querySelector('.cancel-btn').addEventListener('click', CaffeineTracker.hideForm);
+            document.getElementById('caffeineForm').addEventListener('submit', CaffeineTracker.handleFormSubmit);
+            container.querySelector('.delete-btn').addEventListener('click', () => CaffeineTracker.deleteEntry(entryId));
             
         } catch (err) {
             console.error("Error loading caffeine entry for edit:", err);
@@ -348,161 +218,392 @@ const CaffeineTracker = {
             
             // Reload and display entries
             const entries = await loadCaffeineEntries();
-            if (entries) {
-                this.entries = entries;
-                displayCaffeineEntries(entries);
-            } else {
-                displayCaffeineEntries([]);
-            }
+            displayCaffeineEntries(entries);
+            this.displayCaffeineInsights(entries);
             
         } catch (err) {
             console.error("Error deleting caffeine entry:", err);
             showToast("Failed to delete entry: " + err.message, "error");
         }
     },
-    // Add these functions inside the CaffeineTracker object
-sortEntries: function(entries, sortBy = 'date', ascending = false) {
-    if (!entries || entries.length === 0) return [];
     
-    return [...entries].sort((a, b) => {
-        if (sortBy === 'amount') {
-            return ascending ? a.amount - b.amount : b.amount - a.amount;
-        } else if (sortBy === 'date') {
-            return ascending 
-                ? new Date(a.consumed_at) - new Date(b.consumed_at) 
-                : new Date(b.consumed_at) - new Date(a.consumed_at);
-        } else if (sortBy === 'type') {
-            const typeA = a.beverage_type.toLowerCase();
-            const typeB = b.beverage_type.toLowerCase();
-            return ascending 
-                ? typeA.localeCompare(typeB)
-                : typeB.localeCompare(typeA);
+    handleFormSubmit: async function(event) {
+        event.preventDefault();
+        
+        const amount = parseInt(document.getElementById('caffeineAmount').value);
+        const type = document.getElementById('beverageType').value;
+        const consumedAt = document.getElementById('consumedAt').value || new Date().toISOString();
+        
+        try {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            if (!user) {
+                showToast("Please sign in to save entries", "error");
+                return;
+            }
+            
+            let data, error;
+            
+            if (CaffeineTracker.currentEditId) {
+                console.log("Updating caffeine entry:", CaffeineTracker.currentEditId);
+                
+                ({ data, error } = await supabaseClient
+                    .from('caffeine_entries')
+                    .update({
+                        amount: amount,
+                        beverage_type: type,
+                        consumed_at: new Date(consumedAt).toISOString()
+                    })
+                    .eq('id', CaffeineTracker.currentEditId)
+                    .select());
+                    
+                if (error) throw error;
+                
+                showToast("Entry updated successfully!", "success");
+            } else {
+                console.log("Creating new caffeine entry");
+                
+                ({ data, error } = await supabaseClient
+                    .from('caffeine_entries')
+                    .insert([
+                        { 
+                            user_id: user.id,
+                            amount: amount,
+                            beverage_type: type,
+                            consumed_at: new Date(consumedAt).toISOString()
+                        }
+                    ])
+                    .select());
+                    
+                if (error) throw error;
+                
+                showToast("Caffeine entry saved!", "success");
+            }
+            
+            CaffeineTracker.currentEditId = null;
+            CaffeineTracker.hideForm();
+            
+            const entries = await loadCaffeineEntries();
+            displayCaffeineEntries(entries);
+            CaffeineTracker.displayCaffeineInsights(entries);
+            
+        } catch (err) {
+            console.error("Error saving caffeine entry:", err);
+            showToast("Failed to save entry: " + err.message, "error");
         }
-        return 0;
-    });
-},
-
-searchEntries: function(entries, searchTerm) {
-    if (!searchTerm || !entries || entries.length === 0) return entries;
+    },
     
-    const term = searchTerm.toLowerCase().trim();
-    return entries.filter(entry => 
-        (entry.beverage_type && entry.beverage_type.toLowerCase().includes(term)) ||
-        (entry.amount && entry.amount.toString().includes(term))
-    );
-}
-
+    //function to display caffeine insights in the insights card
+    displayCaffeineInsights: function(entries) {
+        if (!entries || entries.length === 0) {
+            console.log("No caffeine entries to display insights for");
+            return;
+        }
+        
+        // Find the insights card (third feature card)
+        const insightsCard = document.querySelector('.feature-card:nth-child(3)');
+        if (!insightsCard) {
+            console.error("Could not find insights card to display caffeine insights");
+            return;
+        }
+        
+        // Calculate insights data
+        const totalCaffeine = entries.reduce((sum, entry) => sum + entry.amount, 0);
+        const avgCaffeine = Math.round(totalCaffeine / entries.length);
+        
+        // Find max intake
+        const maxEntry = entries.reduce((max, entry) => 
+            entry.amount > max.amount ? entry : max, 
+            { amount: 0 }
+        );
+        
+        // Calculate days since first entry
+        const firstEntryDate = new Date(Math.min(...entries.map(e => new Date(e.consumed_at).getTime())));
+        const today = new Date();
+        const daysSinceStart = Math.round((today - firstEntryDate) / (1000 * 60 * 60 * 24));
+        
+        // Get unique dates to count tracking days
+        const uniqueDates = new Set();
+        entries.forEach(entry => {
+            const date = new Date(entry.consumed_at).toLocaleDateString();
+            uniqueDates.add(date);
+        });
+        
+        // Create HTML for insights section
+        const insightsHTML = `
+            <div class="caffeine-insights">
+                <h4>Caffeine Insights</h4>
+                <div class="insights-grid">
+                    <div class="insight-item">
+                        <div class="insight-icon">☕</div>
+                        <div class="insight-content">
+                            <div class="insight-value">${totalCaffeine}mg</div>
+                            <div class="insight-label">Total Caffeine</div>
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-icon">📊</div>
+                        <div class="insight-content">
+                            <div class="insight-value">${avgCaffeine}mg</div>
+                            <div class="insight-label">Daily Average</div>
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-icon">⚡</div>
+                        <div class="insight-content">
+                            <div class="insight-value">${maxEntry.amount}mg</div>
+                            <div class="insight-label">Highest Intake</div>
+                        </div>
+                    </div>
+                    <div class="insight-item">
+                        <div class="insight-icon">📅</div>
+                        <div class="insight-content">
+                            <div class="insight-value">${uniqueDates.size}</div>
+                            <div class="insight-label">Days Tracked</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Check if insights already exist
+        let existingInsights = insightsCard.querySelector('.caffeine-insights');
+        
+        if (existingInsights) {
+            // Update existing insights
+            existingInsights.outerHTML = insightsHTML;
+        } else {
+            // Add insights after the chart
+            const chartElement = insightsCard.querySelector('#statsChart');
+            if (chartElement) {
+                chartElement.insertAdjacentHTML('afterend', insightsHTML);
+            } else {
+                // If no chart, just append to the card
+                insightsCard.insertAdjacentHTML('beforeend', insightsHTML);
+            }
+        }
+    },
+  
+  formatBeverageType: function(type) {
+      if (!type) return '';
+        
+      // Replace underscores with spaces
+      let formatted = type.replace(/_/g, ' ');
+        
+      // Capitalize each word
+      formatted = formatted.split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+            
+      return formatted;
+  },
     
+  displayEntriesList: function(entries) {
+      const container = document.getElementById('caffeineEntries') || 
+                       document.querySelector('.feature-card:first-child');
+        
+      if (!container) return;
+        
+      // Clear any existing entry controls and container
+      let entryControls = container.querySelector('.entry-controls');
+      let entriesContainer = container.querySelector('.entries-container');
+        
+      if (entryControls) entryControls.remove();
+      if (entriesContainer) entriesContainer.remove();
+        
+      // Create fresh controls and container
+      entryControls = document.createElement('div');
+      entryControls.className = 'entry-controls';
+      entryControls.innerHTML = `
+          <div class="search-box">
+              <input type="text" class="search-input" id="caffeineSearch" placeholder="Search entries...">
+          </div>
+          <div class="sort-controls">
+              <select id="caffeineSort" class="sort-select">
+                  <option value="date-desc">Date (newest first)</option>
+                  <option value="date-asc">Date (oldest first)</option>
+                  <option value="amount-desc">Amount (high to low)</option>
+                  <option value="amount-asc">Amount (low to high)</option>
+              </select>
+          </div>
+      `;
+        
+      entriesContainer = document.createElement('div');
+      entriesContainer.className = 'entries-container';
+        
+      // Append them to the container
+      container.appendChild(entryControls);
+      container.appendChild(entriesContainer);
+        
+      // Set up event listeners
+      const searchInput = document.getElementById('caffeineSearch');
+      if (searchInput) {
+          searchInput.addEventListener('input', () => this.filterAndSortEntries(entries));
+      }
+        
+      const sortSelect = document.getElementById('caffeineSort');
+      if (sortSelect) {
+          sortSelect.addEventListener('change', () => this.filterAndSortEntries(entries));
+      }
+        
+      // Initial display
+      this.filterAndSortEntries(entries);
+  },
+    
+  filterAndSortEntries: function(entries) {
+      if (!entries || entries.length === 0) return;
+        
+      const searchTerm = document.getElementById('caffeineSearch')?.value.toLowerCase() || '';
+      const sortOption = document.getElementById('caffeineSort')?.value || 'date-desc';
+        
+      // Filter entries
+      let filteredEntries = entries.filter(entry => {
+          if (this.formatBeverageType(entry.beverage_type).toLowerCase().includes(searchTerm)) return true;
+          if (entry.amount.toString().includes(searchTerm)) return true;
+            
+          const date = new Date(entry.consumed_at);
+          const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+          if (dateStr.toLowerCase().includes(searchTerm)) return true;
+            
+          return false;
+      });
+        
+      // Sort entries
+      filteredEntries.sort((a, b) => {
+          switch(sortOption) {
+              case 'date-asc': return new Date(a.consumed_at) - new Date(b.consumed_at);
+              case 'date-desc': return new Date(b.consumed_at) - new Date(a.consumed_at);
+              case 'amount-asc': return a.amount - b.amount;
+              case 'amount-desc': return b.amount - a.amount;
+              default: return new Date(b.consumed_at) - new Date(a.consumed_at);
+          }
+      });
+        
+      this.displayFilteredEntries(filteredEntries);
+  },
+    
+  displayFilteredEntries: function(entries) {
+      const container = document.querySelector('.entries-container');
+      if (!container) return;
+        
+      container.innerHTML = '';
+        
+      if (entries.length === 0) {
+          container.innerHTML = '<p class="no-results">No entries match your search</p>';
+          return;
+      }
+        
+      entries.forEach(entry => {
+          const date = new Date(entry.consumed_at);
+          const item = document.createElement('div');
+          item.className = 'entry-item';
+          item.innerHTML = `
+              <div>
+                  <span class="entry-type">${this.formatBeverageType(entry.beverage_type)}</span>
+                  <span class="entry-amount">${entry.amount}mg</span>
+              </div>
+              <div class="entry-date">${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+              <button class="edit-entry-btn" onclick="CaffeineTracker.editEntry('${entry.id}')">Edit</button>
+          `;
+          container.appendChild(item);
+      });
+  }  
 };
 
-// Loading caffeine entries from database
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('caffeineForm');
+    if (form) {
+        console.log("Found caffeine form, attaching submit handler");
+        form.addEventListener('submit', CaffeineTracker.handleFormSubmit);
+    }
+    
+    // Add event listener for the cancel button
+    const cancelButton = document.querySelector('#caffeineForm .cancel-btn') || 
+                          document.querySelector('#caffeineFormContainer .cancel-btn');
+    
+    if (cancelButton) {
+        console.log("Found cancel button, attaching click handler");
+        cancelButton.addEventListener('click', CaffeineTracker.hideForm);
+    }
+});
+
+// Initialize tracker
+CaffeineTracker.initialize();
+
+// Expose functions globally if needed for HTML onclick attributes
+window.showCaffeineForm = CaffeineTracker.showAddForm;
+window.hideCaffeineForm = CaffeineTracker.hideForm;
+
 async function loadCaffeineEntries() {
     try {
-        console.log("Loading caffeine entries...")
-        const { data: { user } } = await supabaseClient.auth.getUser()
+        console.log("Loading caffeine entries...");
+        const { data: { user } } = await supabaseClient.auth.getUser();
         
         if (!user) {
-            console.log("No authenticated user")
-            return
+            console.log("No authenticated user");
+            return [];
         }
         
         const { data, error } = await supabaseClient
             .from('caffeine_entries')
             .select('*')
             .eq('user_id', user.id)
-            .order('consumed_at', { ascending: false })
+            .order('consumed_at', { ascending: false });
             
-        if (error) throw error
+        if (error) throw error;
         
-        console.log("Retrieved caffeine entries:", data)
+        console.log("Retrieved caffeine entries:", data);
         
-        // Store entries globally for sorting/searching
-        window.allCaffeineEntries = data || [];
         
-        return data
+        if (data && data.length > 0) {
+            CaffeineTracker.displayCaffeineInsights(data);
+        }
+        
+        return data || [];
         
     } catch (err) {
-        console.error("Error loading caffeine entries:", err)
+        console.error("Error loading caffeine entries:", err);
+        return [];
     }
 }
 
-// Display caffeine entries in the UI
-// Find the displayCaffeineEntries function and modify it
+// Function to display caffeine entries with a Log Caffeine button
 function displayCaffeineEntries(entries) {
     const container = document.getElementById('caffeineEntries') || 
                      document.querySelector('.feature-card:first-child');
-    
+  
     if (!container) {
       console.error("Could not find container to display caffeine entries");
       return;
     }
-    
+  
     // Button to add new caffeine entry
     const addButton = `
       <button id="addCaffeineBtn" class="journal-btn">Log Caffeine</button>
     `;
-    
-    // Add search and sort controls
-    const controlsHtml = `
-      <div class="entry-controls">
-        <div class="search-box">
-          <input type="text" id="caffeineSearch" placeholder="Search entries..." class="search-input">
-        </div>
-        <div class="sort-controls">
-          <label for="sortCriteria">Sort by:</label>
-          <select id="sortCriteria" class="sort-select">
-            <option value="date">Date</option>
-            <option value="amount">Caffeine Amount</option>
-            <option value="type">Beverage Type</option>
-          </select>
-          <button id="sortDirection" class="sort-direction" data-ascending="false">↓</button>
-        </div>
-      </div>
-    `;
-    
+  
     if (!entries || entries.length === 0) {
       container.innerHTML = `
         <div class="timer-display">
           <h3>Caffeine Tracker</h3>
           <p>No caffeine consumed yet. Good job! ☕</p>
-          ${controlsHtml}
           ${addButton}
         </div>`;
     } else {
       // Sort entries by consumed_at date (newest first)
       entries.sort((a, b) => new Date(b.consumed_at) - new Date(a.consumed_at));
-      
+    
       // Get the most recent entry
       const lastEntry = entries[0];
       const lastConsumedDate = new Date(lastEntry.consumed_at);
-      
+    
       // Calculate time since last caffeine
       const timeSince = getTimeSince(lastConsumedDate);
-      
-      // Create entries HTML
-      let entriesHtml = '';
-      if (entries.length > 1) {
-        entriesHtml = `
-          <div class="caffeine-entries-list">
-            <h4>Recent Entries</h4>
-            <div class="entries-container">
-              ${entries.slice(1, 5).map(entry => `
-                <div class="entry-item" data-id="${entry.id}">
-                  <div class="entry-type">${entry.beverage_type}</div>
-                  <div class="entry-amount">${entry.amount}mg</div>
-                  <div class="entry-date">${new Date(entry.consumed_at).toLocaleString()}</div>
-                  <button class="edit-entry-btn" onclick="CaffeineTracker.editEntry('${entry.id}')">Edit</button>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-      }
-      
+    
       // Create the HTML for the timer display
       container.innerHTML = `
-        <h3>Time Since Last Caffeine</h3>
-        <div class="card-content">
+        <div class="timer-display">
+          <h3>Time Since Last Caffeine</h3>
           <div id="caffeineTimer" class="metric-display">
             <span class="time-counter">${timeSince}</span>
           </div>
@@ -511,107 +612,42 @@ function displayCaffeineEntries(entries) {
               <h4>Last Consumption</h4>
               <button onclick="CaffeineTracker.editEntry('${lastEntry.id}')" class="edit-btn">Edit</button>
             </div>
-            <p>${lastEntry.beverage_type} (${lastEntry.amount}mg)</p>
+            <p>${CaffeineTracker.formatBeverageType(lastEntry.beverage_type)} (${lastEntry.amount}mg)</p>
             <small>Consumed on ${lastConsumedDate.toLocaleDateString()} at ${lastConsumedDate.toLocaleTimeString()}</small>
           </div>
-          ${controlsHtml}
-          ${entriesHtml}
-        </div>
-        <div class="card-actions">
           ${addButton}
-        </div>
-      `;
-      
+        </div>`;
+    
       // Set up interval to update the timer
       updateCaffeineTimer(lastConsumedDate);
-    }
     
+      
+      CaffeineTracker.displayEntriesList(entries);
+    }
+  
     // Add event listener to the add button
     const addCaffeineBtn = document.getElementById('addCaffeineBtn');
     if (addCaffeineBtn) {
-      addCaffeineBtn.addEventListener('click', showCaffeineForm);
+      addCaffeineBtn.addEventListener('click', CaffeineTracker.showAddForm);
     }
+}
+// Add this helper function to format beverage types
+function formatBeverageType(type) {
+    if (!type) return '';
     
-    // Add event listeners for search and sort
-    const searchInput = document.getElementById('caffeineSearch');
-    const sortCriteria = document.getElementById('sortCriteria');
-    const sortDirection = document.getElementById('sortDirection');
+    // Replace underscores with spaces
+    let formatted = type.replace(/_/g, ' ');
     
-    if (searchInput) {
-      searchInput.addEventListener('input', function() {
-        // Store current entries in a global variable if not already done
-        if (!window.allCaffeineEntries) {
-          window.allCaffeineEntries = entries;
-        }
-        
-        // Apply search filter
-        const filtered = CaffeineTracker.searchEntries(window.allCaffeineEntries, this.value);
-        
-        // Apply current sort
-        const sortBy = sortCriteria ? sortCriteria.value : 'date';
-        const ascending = sortDirection ? sortDirection.dataset.ascending === 'true' : false;
-        const sorted = CaffeineTracker.sortEntries(filtered, sortBy, ascending);
-        
-        // Redisplay with search and sort applied
-        displayCaffeineEntries(sorted);
-        
-        // Re-select the search field and restore its value
-        const newSearchInput = document.getElementById('caffeineSearch');
-        if (newSearchInput) {
-          newSearchInput.value = this.value;
-          newSearchInput.focus();
-        }
-      });
-    }
-    
-    if (sortCriteria && sortDirection) {
-      // Function to handle sort changes
-      const handleSortChange = function() {
-        // Store current entries if not already done
-        if (!window.allCaffeineEntries) {
-          window.allCaffeineEntries = entries;
-        }
-        
-        // Get current search term
-        const searchTerm = searchInput ? searchInput.value : '';
-        
-        // Apply search filter
-        const filtered = CaffeineTracker.searchEntries(window.allCaffeineEntries, searchTerm);
-        
-        // Apply sort
-        const sortBy = sortCriteria.value;
-        const ascending = sortDirection.dataset.ascending === 'true';
-        const sorted = CaffeineTracker.sortEntries(filtered, sortBy, ascending);
-        
-        // Redisplay with sort applied
-        displayCaffeineEntries(sorted);
-        
-        // Restore search and sort UI state
-        const newSearchInput = document.getElementById('caffeineSearch');
-        const newSortCriteria = document.getElementById('sortCriteria');
-        const newSortDirection = document.getElementById('sortDirection');
-        
-        if (newSearchInput) newSearchInput.value = searchTerm;
-        if (newSortCriteria) newSortCriteria.value = sortBy;
-        if (newSortDirection) {
-          newSortDirection.dataset.ascending = ascending;
-          newSortDirection.textContent = ascending ? '↑' : '↓';
-        }
-      };
+    // Capitalize each word
+    formatted = formatted.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
       
-      sortCriteria.addEventListener('change', handleSortChange);
-      
-      sortDirection.addEventListener('click', function() {
-        const ascending = this.dataset.ascending === 'true';
-        this.dataset.ascending = (!ascending).toString();
-        this.textContent = !ascending ? '↑' : '↓';
-        handleSortChange();
-      });
-    }
+    return formatted;
   }
   
 
-// Function to calculate time since last caffeine
+// Function to calculate time since last caffeine with clearer labels
 function getTimeSince(date) {
     const now = new Date();
     const diffMs = now - date;
@@ -653,20 +689,10 @@ function updateCaffeineTimer(lastConsumedDate) {
     }, 60000); // Update every minute
 }
 
-
-
-// Initialize on DOM ready
+// Make sure to load entries when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize caffeine tracking if user is logged in
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-            CaffeineTracker.initialize();
-        }
+    // Load and display entries
+    loadCaffeineEntries().then(entries => {
+      displayCaffeineEntries(entries);
     });
 });
-
-// Make the tracker functions globally available
-window.initializeCaffeineTracking = CaffeineTracker.initialize.bind(CaffeineTracker);
-window.showCaffeineForm = CaffeineTracker.showAddForm.bind(CaffeineTracker);
-window.hideCaffeineForm = CaffeineTracker.hideForm.bind(CaffeineTracker);
-

@@ -134,38 +134,32 @@ function loadNavbar() {
             }
         });
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     loadNavbar().then(() => {
         setupModalListeners();
-        cleanupCharts();
+        cleanupCharts(); // Clean up first
         
-        // Stagger initializations with timeouts
+        // Wait a bit for DOM to be fully ready
         setTimeout(() => {
-            if (typeof initializeCharts === 'function') {
-                initializeCharts();
-            }
+            // Initialize charts only once
+            initializeCharts();
             
-            // Initialize components only after authentication check
+            // Then check if user is logged in and initialize other components
             supabaseClient.auth.getSession().then(({ data: { session } }) => {
                 if (session) {
-                    // Sequential initialization with delays
-                    setTimeout(() => {
-                        if (typeof initializeCaffeineTracking === 'function') {
-                            initializeCaffeineTracking();
-                        }
-                        
-                        setTimeout(() => {
-                            if (typeof initializeWellnessTracking === 'function') {
-                                initializeWellnessTracking();
-                            }
-                        }, 150);
-                    }, 150);
+                    // These should update the chart, not recreate it
+                    if (typeof initializeCaffeineTracking === 'function') {
+                        initializeCaffeineTracking();
+                    }
+                    if (typeof initializeWellnessTracking === 'function') {
+                        initializeWellnessTracking();
+                    }
                 }
             });
         }, 100);
     });
-});supabaseClient.auth.onAuthStateChange((event, session) => {
+});
+supabaseClient.auth.onAuthStateChange((event, session) => {
     // Delay the DOM updates to ensure elements are loaded
     setTimeout(() => {
         const signInBtn = document.querySelector('.signInBtn');

@@ -1,6 +1,34 @@
-let currentChart = null; // Global variable to track chart instance
+// Global variable to track chart instance
+let currentChart = null;
 
-// Simple chart initialization function
+// Function to clean up any existing charts
+function cleanupCharts() {
+    if (currentChart) {
+        console.log("Destroying existing chart");
+        currentChart.destroy();
+        currentChart = null;
+    }
+    
+    // Also check for wellness chart instance
+    if (window.wellnessChart) {
+        console.log("Destroying wellness chart");
+        window.wellnessChart.destroy();
+        window.wellnessChart = null;
+    }
+    
+    // 
+    try {
+        const existingChart = Chart.getChart('statsChart');
+        if (existingChart) {
+            console.log("Destroying chart by canvas ID");
+            existingChart.destroy();
+        }
+    } catch (e) {
+        
+        console.log("Could not get chart by canvas ID (might be ok)");
+    }
+}
+
 function initializeCharts() {
     console.log("Initializing charts...");
     const chartCanvas = document.getElementById('statsChart');
@@ -10,17 +38,14 @@ function initializeCharts() {
         return;
     }
     
-    // Clean up existing charts
-    if (Chart.getChart(chartCanvas)) {
-        Chart.getChart(chartCanvas).destroy();
+    if (typeof Chart === 'undefined') {
+        console.error("Chart.js library not loaded");
+        return;
     }
     
-    if (window.wellnessChart && typeof window.wellnessChart.destroy === 'function') {
-        window.wellnessChart.destroy();
-        window.wellnessChart = null;
-    }
+    // Clean up any existing charts
+    cleanupCharts();
     
-    // Now create the new chart...    
     const ctx = chartCanvas.getContext('2d');
     
     // Create new chart and store reference
@@ -52,14 +77,41 @@ function initializeCharts() {
                 }
             ]
         },
-        ooptions: {
+        options: {
             responsive: true,
-            maintainAspectRatio: true, // Change to true
+            maintainAspectRatio: false,
             plugins: {
-                // your existing plugin options
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#4b2e1a'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#4b2e1a',
+                    titleColor: '#f5e1c5',
+                    bodyColor: '#f5e1c5'
+                }
             },
             scales: {
-                // your existing scales options
+                y: {
+                    beginAtZero: true,
+                    max: 5,
+                    ticks: {
+                        color: '#4b2e1a'
+                    },
+                    grid: {
+                        color: 'rgba(75, 46, 26, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#4b2e1a'
+                    },
+                    grid: {
+                        color: 'rgba(75, 46, 26, 0.1)'
+                    }
+                }
             }
         }
     });
@@ -67,5 +119,6 @@ function initializeCharts() {
     console.log("Chart initialized");
 }
 
-// Make sure this function is available globally
+// Make these functions available globally
 window.initializeCharts = initializeCharts;
+window.cleanupCharts = cleanupCharts;

@@ -1,15 +1,48 @@
 # Testing Documentation
 
-This document outlines the testing approach and results for the Going Cold Coffee application.
+## Overview
+
+The Going Cold Coffee application has been thoroughly tested through both manual testing and automated unit tests. This document outlines the testing approach and coverage.
 
 ## Testing Approach
 
 The application was tested using a combination of:
+- Unit testing
 - Manual testing of user flows
 - Input validation testing
 - Cross-browser compatibility testing
 - Error handling testing
 - User testing from peers
+
+
+## Unit Tests
+
+Unit tests are implemented using Jest with jsdom to simulate the browser environment. The tests focus on core functionality components.
+
+### Test Files
+
+- **auth.test.js**: Tests user authentication flows
+- **caffeine.test.js**: Tests caffeine tracking functionality
+- **wellness.test.js**: Tests wellness tracking and chart visualization
+- **utils.test.js**: Tests utility functions like notifications
+
+### Running Tests
+
+1. Run all tests:
+   ```
+   npm test
+   ```
+
+2. Run individual test files:
+   ```
+   npx jest public/Testing/auth.test.js --config jest.config.js
+   ```
+
+3. Generate coverage report:
+   ```
+   npm test -- --coverage
+   ```
+
 
 ## Manual Test Cases
 
