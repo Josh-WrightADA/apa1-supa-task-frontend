@@ -80,19 +80,25 @@ function setupModalListeners() {
 }
 
 async function signUp(email, password) {
-    const { data, error } = await supabaseClient.auth.signUp({
-        email,
-        password,
-    });
+    try {
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+        });
 
-    if (error) {
-        showToast(error.message, 'error');
-    } else {
+        if (error) {
+            showToast(error.message, 'error');
+            return;
+        }
+
+        
         showToast("Sign-up successful! Check your email to confirm.", 'success');
         document.getElementById('registerModal').style.display = 'none';
+    } catch (err) {
+        console.error("Registration error:", err);
+        showToast("Error during registration.", 'error');
     }
 }
-
 async function signIn(email, password) {
     const { data, error } = await supabaseClient.auth.signInWithPassword({
         email,
@@ -188,19 +194,47 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
         }
     }, 100); // Small delay to ensure DOM is ready
 });
+let activeToastTimer = null;
+
 function showToast(message, type = 'success') {
+    // Clear any existing toast and timer
+    const existingToasts = document.querySelectorAll('.toast-notification');
+    existingToasts.forEach(toast => toast.remove());
+    
+    if (activeToastTimer) {
+        clearTimeout(activeToastTimer);
+        activeToastTimer = null;
+    }
+    
+    // Create new toast
     const toast = document.createElement('div');
     toast.className = `toast-notification toast-${type}`;
     const icon = type === 'success' ? '✓' : '⚠';
     toast.innerHTML = `<span class="toast-icon">${icon}</span>${message}`;
     document.body.appendChild(toast);
+    
+    // Filter out database errors for registration
+    if (message.includes("database error registering new user")) {
+        // Don't show this error if we've just shown a registration success message
+        const successToast = document.querySelector('.toast-success');
+        if (successToast && successToast.textContent.includes("email to confirm")) {
+            toast.remove();
+            return;
+        }
+    }
+    
+    // Show toast
     setTimeout(() => toast.classList.add('show'), 100);
-    setTimeout(() => {
+    
+    // Set timer to hide toast
+    activeToastTimer = setTimeout(() => {
         toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => {
+            toast.remove();
+            activeToastTimer = null;
+        }, 300);
     }, 3000);
 }
-
 function createRipple(event) {
     const button = event.currentTarget;
     const ripple = document.createElement('span');
